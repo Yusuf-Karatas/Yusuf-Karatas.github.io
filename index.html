@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Yusuf Karataş</title>
 <meta name="description" content="Yusuf Karataş — Bilgisayar Mühendisliği öğrencisi. Gömülü sistemler, C/C++ ve nesneye dayalı programlama.">
+<link rel="icon" id="favicon" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -327,6 +328,29 @@ langBtn.addEventListener("click", () => {
   store.set("lang", lang);
   applyLang();
 });
+
+// Favicon: a smiling Guy Fawkes style mask that winks every few seconds
+(() => {
+  const link = document.getElementById("favicon");
+  const eye = x => `<path d="M${x} 29q6-7 12 0q-6 4-12 0z" fill="#111"/>`;
+  const closed = x => `<path d="M${x} 28q6 5 12 0" stroke="#111" stroke-width="3" fill="none" stroke-linecap="round"/>`;
+  const mask = wink => "data:image/svg+xml," + encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">` +
+    `<path d="M32 3C17 3 9 14 9 28c0 15 9 29 23 33 14-4 23-18 23-33C55 14 47 3 32 3z" fill="#f5efe1" stroke="#111" stroke-width="2"/>` +
+    `<circle cx="18" cy="37" r="5" fill="#e79a9a" opacity=".7"/><circle cx="46" cy="37" r="5" fill="#e79a9a" opacity=".7"/>` +
+    `<path d="M13 22q7-7 15-2M51 22q-7-7-15-2" stroke="#111" stroke-width="3" fill="none" stroke-linecap="round"/>` +
+    eye(14) + (wink ? closed(38) : eye(38)) +
+    `<path d="M32 41c-4-3-9-3-12 0-3 3-7 2-8-2 0 6 6 8 11 6 4-1 7-3 9-4 2 1 5 3 9 4 5 2 11 0 11-6-1 4-5 5-8 2-3-3-8-3-12 0z" fill="#111"/>` +
+    `<path d="M24 47q8 5 16 0" stroke="#111" stroke-width="2" fill="none" stroke-linecap="round"/>` +
+    `<path d="M32 50l-2.5 9h5z" fill="#111"/></svg>`
+  );
+  const open = mask(false), winking = mask(true);
+  link.href = open;
+  setInterval(() => {
+    link.href = winking;
+    setTimeout(() => { link.href = open; }, 400);
+  }, 3500);
+})();
 
 // Matrix-style code rain: slow, sparse columns drawn at ~20fps
 const rain = (() => {
