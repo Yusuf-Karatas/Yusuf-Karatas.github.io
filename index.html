@@ -48,6 +48,26 @@
   @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) #rain { opacity: .28; } }
   :root[data-theme="dark"] #rain { opacity: .28; }
   main, footer { position: relative; z-index: 1; }
+
+  /* Easter egg: hidden trigger + word-brick breakout */
+  #eggBtn {
+    position: fixed; top: 0; left: 0; width: 18px; height: 18px; z-index: 20;
+    background: none; border: 0; cursor: pointer;
+  }
+  #eggBtn::after {
+    content: ""; position: absolute; top: 4px; left: 4px; width: 4px; height: 4px;
+    background: var(--accent); opacity: 0; transition: opacity .3s;
+  }
+  #eggBtn:hover::after { opacity: .6; }
+  #egg { position: fixed; inset: 0; z-index: 30; cursor: none; touch-action: none; }
+  #eggClose {
+    position: fixed; top: 64px; right: 16px; z-index: 31;
+    font-family: var(--mono); font-size: .8rem; cursor: pointer;
+    background: var(--surface); color: var(--text);
+    border: 1px solid var(--accent); border-radius: 6px; padding: 5px 10px;
+  }
+  .brick.live { box-shadow: inset 0 -2px 0 var(--accent-soft); }
+  .brick.hit { opacity: 0; visibility: hidden; transition: opacity .25s, visibility .25s; }
   .wrap { max-width: 760px; margin: 0 auto; padding: 0 16px; }
 
   /* Nav */
@@ -138,6 +158,7 @@
 </head>
 <body>
 <canvas id="rain" aria-hidden="true"></canvas>
+<button id="eggBtn" aria-label="?"></button>
 
 <nav>
   <div class="wrap">
@@ -394,6 +415,233 @@ document.querySelectorAll(".reveal").forEach(el => io.observe(el));
 
 document.getElementById("year").textContent = new Date().getFullYear();
 applyLang();
+
+// Easter egg: breakout where every word on the page is a brick
+const egg = (() => {
+  const text = {
+    tr: { launch: "Başlatmak için tıkla / boşluk · Çıkış: Esc", over: "Oyun bitti", won: "Tüm kelimeler yok edildi!", again: "Tekrar için tıkla · Çıkış: Esc", close: "✕ Çıkış" },
+    en: { launch: "Click / Space to launch · Esc to quit", over: "Game over", won: "Every word destroyed!", again: "Click to play again · Esc to quit", close: "✕ Quit" }
+  };
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  let running = false, ac;
+
+  function wrapWords(root) {
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+      acceptNode: n => !n.textContent.trim() || n.parentElement.closest("#typed, script, style")
+        ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT
+    });
+    const nodes = [];
+    while (walker.nextNode()) nodes.push(walker.currentNode);
+    nodes.forEach(node => {
+      const frag = document.createDocumentFragment();
+      node.textContent.split(/(\s+)/).forEach(part => {
+        if (!part) return;
+        if (/^\s+$/.test(part)) return frag.append(part);
+        const span = document.createElement("span");
+        span.className = "brick";
+        span.textContent = part;
+        frag.append(span);
+      });
+      node.replaceWith(frag);
+    });
+  }
+
+  function unwrapWords() {
+    document.querySelectorAll("span.brick").forEach(span => {
+      const parent = span.parentNode;
+      span.replaceWith(span.textContent);
+      parent.normalize();
+    });
+    document.querySelectorAll("[data-egg-hidden]").forEach(el => {
+      el.style.visibility = "";
+      delete el.dataset.eggHidden;
+    });
+  }
+
+  function start() {
+    running = true;
+    ac = new AbortController();
+    const on = (target, type, fn, opts = {}) => target.addEventListener(type, fn, { ...opts, signal: ac.signal });
+    const t = text[lang];
+
+    document.querySelectorAll(".reveal").forEach(el => { el.style.transition = "none"; el.classList.add("visible"); });
+    document.documentElement.style.overflow = "hidden";
+    langBtn.disabled = true;
+    wrapWords(document.querySelector("main"));
+    wrapWords(document.querySelector("footer"));
+
+    let W = innerWidth, H = innerHeight;
+    let top = document.querySelector("nav").getBoundingClientRect().bottom;
+    // Only words fully on screen and well above the paddle become bricks
+    const bricks = [...document.querySelectorAll("span.brick")]
+      .map(el => ({ el, r: el.getBoundingClientRect(), alive: true }))
+      .filter(b => b.r.width > 0 && b.r.top > top && b.r.bottom < H - 140);
+    bricks.forEach(b => b.el.classList.add("live"));
+
+    const cv = document.createElement("canvas");
+    cv.id = "egg"; cv.width = W; cv.height = H;
+    const close = document.createElement("button");
+    close.id = "eggClose"; close.textContent = t.close;
+    document.body.append(cv, close);
+    const ctx = cv.getContext("2d");
+    const css = getComputedStyle(document.documentElement);
+    const accent = css.getPropertyValue("--accent").trim();
+    const fg = css.getPropertyValue("--text").trim();
+
+    const paddle = { x: W / 2, w: Math.min(120, W * 0.28), h: 10, y: H - 40 };
+    const ball = { x: 0, y: 0, vx: 0, vy: 0, r: 7, stuck: true };
+    const keys = {};
+    let score = 0, lives = 3, state = "play", speed = 6;
+
+    function launch() {
+      if (state !== "play") { stop(); return start(); }
+      if (!ball.stuck) return;
+      ball.stuck = false;
+      const ang = (Math.random() - 0.5) * Math.PI / 3;
+      ball.vx = speed * Math.sin(ang);
+      ball.vy = -speed * Math.cos(ang);
+    }
+
+    function hitBrick(b) {
+      b.alive = false;
+      b.el.classList.add("hit");
+      score++;
+      speed = Math.min(11, 6 + score * 0.04);
+      const holder = b.el.closest(".tag, .btn, .status");
+      if (holder && !bricks.some(o => o.alive && holder.contains(o.el))) {
+        holder.style.visibility = "hidden";
+        holder.dataset.eggHidden = "";
+      }
+      if (!bricks.some(o => o.alive)) state = "won";
+    }
+
+    // Returns false when the ball is lost so the remaining substeps stop
+    function step(d) {
+      ball.x += ball.vx * d;
+      ball.y += ball.vy * d;
+      if (ball.x < ball.r) { ball.x = ball.r; ball.vx = Math.abs(ball.vx); }
+      if (ball.x > W - ball.r) { ball.x = W - ball.r; ball.vx = -Math.abs(ball.vx); }
+      if (ball.y < top + ball.r) { ball.y = top + ball.r; ball.vy = Math.abs(ball.vy); }
+
+      if (ball.vy > 0 && ball.y + ball.r >= paddle.y && ball.y - ball.r <= paddle.y + paddle.h
+          && Math.abs(ball.x - paddle.x) <= paddle.w / 2 + ball.r) {
+        // Where the ball lands on the paddle sets the bounce angle
+        const ang = clamp((ball.x - paddle.x) / (paddle.w / 2), -1, 1) * Math.PI / 3;
+        ball.vx = speed * Math.sin(ang);
+        ball.vy = -speed * Math.cos(ang);
+        ball.y = paddle.y - ball.r;
+      }
+
+      if (ball.y - ball.r > H) {
+        lives--;
+        if (lives <= 0) state = "over"; else ball.stuck = true;
+        return false;
+      }
+
+      for (const b of bricks) {
+        if (!b.alive) continue;
+        const r = b.r;
+        const dx = ball.x - clamp(ball.x, r.left, r.right);
+        const dy = ball.y - clamp(ball.y, r.top, r.bottom);
+        if (dx * dx + dy * dy > ball.r * ball.r) continue;
+        hitBrick(b);
+        // Bounce along the axis with the smaller overlap
+        const ox = Math.min(ball.x + ball.r - r.left, r.right - ball.x + ball.r);
+        const oy = Math.min(ball.y + ball.r - r.top, r.bottom - ball.y + ball.r);
+        if (ox < oy) ball.vx = -ball.vx; else ball.vy = -ball.vy;
+        const k = speed / Math.hypot(ball.vx, ball.vy);
+        ball.vx *= k; ball.vy *= k;
+        break;
+      }
+      return true;
+    }
+
+    function update(dt) {
+      if (keys.ArrowLeft) paddle.x -= 10 * dt;
+      if (keys.ArrowRight) paddle.x += 10 * dt;
+      paddle.x = clamp(paddle.x, paddle.w / 2, W - paddle.w / 2);
+      if (state !== "play") return;
+      if (ball.stuck) { ball.x = paddle.x; ball.y = paddle.y - ball.r - 1; return; }
+      // Substeps keep the fast ball from tunnelling through small words
+      const steps = Math.ceil(speed * dt / ball.r) + 1;
+      for (let i = 0; i < steps && state === "play"; i++) if (!step(dt / steps)) break;
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, W, H);
+      ctx.fillStyle = accent;
+      ctx.beginPath();
+      ctx.roundRect(paddle.x - paddle.w / 2, paddle.y, paddle.w, paddle.h, 5);
+      ctx.fill();
+      if (state === "play") {
+        ctx.shadowColor = accent; ctx.shadowBlur = 14;
+        ctx.beginPath(); ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI * 2); ctx.fill();
+        ctx.shadowBlur = 0;
+      }
+      ctx.fillStyle = fg;
+      ctx.font = '14px "JetBrains Mono", monospace';
+      ctx.textAlign = "left";
+      ctx.fillText(`score ${score}/${bricks.length}   ${"♥".repeat(lives)}`, 16, top + 24);
+      ctx.textAlign = "center";
+      if (state === "play" && ball.stuck) ctx.fillText(t.launch, W / 2, paddle.y - 30);
+      if (state !== "play") {
+        ctx.font = '600 28px "JetBrains Mono", monospace';
+        ctx.fillStyle = accent;
+        ctx.fillText(state === "won" ? t.won : t.over, W / 2, H / 2);
+        ctx.font = '14px "JetBrains Mono", monospace';
+        ctx.fillStyle = fg;
+        ctx.fillText(`score ${score} · ${t.again}`, W / 2, H / 2 + 32);
+      }
+    }
+
+    // Viewport changes (mobile address bar, window resize) re-measure instead of ending the game
+    function relayout() {
+      W = innerWidth; H = innerHeight;
+      cv.width = W; cv.height = H;
+      top = document.querySelector("nav").getBoundingClientRect().bottom;
+      paddle.y = H - 40;
+      paddle.w = Math.min(120, W * 0.28);
+      bricks.forEach(b => { if (b.alive) b.r = b.el.getBoundingClientRect(); });
+    }
+
+    let last = performance.now();
+    function loop(now) {
+      if (!running) return;
+      const dt = Math.min((now - last) / 16.67, 3);
+      last = now;
+      update(dt);
+      draw();
+      requestAnimationFrame(loop);
+    }
+
+    on(cv, "pointermove", e => { paddle.x = e.clientX; });
+    on(cv, "pointerdown", e => { paddle.x = e.clientX; launch(); });
+    on(close, "click", stop);
+    on(window, "resize", relayout);
+    on(window, "keydown", e => {
+      if (e.key === "Escape") return stop();
+      if (e.key === " ") { e.preventDefault(); launch(); }
+      keys[e.key] = true;
+    });
+    on(window, "keyup", e => { keys[e.key] = false; });
+    requestAnimationFrame(loop);
+  }
+
+  function stop() {
+    if (!running) return;
+    running = false;
+    ac.abort();
+    document.getElementById("egg")?.remove();
+    document.getElementById("eggClose")?.remove();
+    unwrapWords();
+    document.documentElement.style.overflow = "";
+    langBtn.disabled = false;
+  }
+
+  document.getElementById("eggBtn").addEventListener("click", () => { if (!running) start(); });
+  console.log("%c> psst... sol üst köşeye bak 👀", "color:#22c55e;font-family:monospace");
+  return { start, stop };
+})();
 </script>
 </body>
 </html>
