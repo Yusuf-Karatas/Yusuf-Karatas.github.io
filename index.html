@@ -1,0 +1,340 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Yusuf Karataş</title>
+<meta name="description" content="Yusuf Karataş — Bilgisayar Mühendisliği öğrencisi. Gömülü sistemler, C/C++ ve nesneye dayalı programlama.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #fafafa;
+    --surface: #ffffff;
+    --text: #18181b;
+    --muted: #71717a;
+    --border: #e4e4e7;
+    --accent: #0d9488;
+    --accent-soft: #ccfbf1;
+    --mono: "JetBrains Mono", ui-monospace, Consolas, monospace;
+    --sans: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0a0a0b; --surface: #131316; --text: #f4f4f5; --muted: #a1a1aa;
+      --border: #27272a; --accent: #2dd4bf; --accent-soft: #134e4a;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0a0a0b; --surface: #131316; --text: #f4f4f5; --muted: #a1a1aa;
+    --border: #27272a; --accent: #2dd4bf; --accent-soft: #134e4a;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg); color: var(--text); font-family: var(--sans);
+    line-height: 1.65; -webkit-font-smoothing: antialiased;
+    transition: background .25s, color .25s;
+  }
+  a { color: inherit; }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 0 16px; }
+
+  /* Nav */
+  nav {
+    position: sticky; top: 0; z-index: 10;
+    background: color-mix(in srgb, var(--bg) 80%, transparent);
+    backdrop-filter: blur(10px); border-bottom: 1px solid var(--border);
+  }
+  nav .wrap { display: flex; align-items: center; justify-content: space-between; height: 56px; gap: 12px; }
+  .logo { font-family: var(--mono); font-weight: 500; text-decoration: none; white-space: nowrap; }
+  .logo span { color: var(--accent); }
+  .links { display: flex; gap: 20px; font-size: .9rem; }
+  .links a { text-decoration: none; color: var(--muted); transition: color .2s; }
+  .links a:hover { color: var(--accent); }
+  .controls { display: flex; gap: 8px; }
+  .controls button {
+    font-family: var(--mono); font-size: .8rem; cursor: pointer;
+    background: var(--surface); color: var(--text);
+    border: 1px solid var(--border); border-radius: 6px; padding: 5px 10px;
+    transition: border-color .2s;
+  }
+  .controls button:hover { border-color: var(--accent); }
+  @media (max-width: 640px) { .links { display: none; } }
+
+  /* Hero */
+  .hero { padding: 96px 0 72px; }
+  .prompt { font-family: var(--mono); color: var(--accent); font-size: .95rem; margin-bottom: 18px; }
+  .cursor { display: inline-block; width: 9px; height: 1.1em; background: var(--accent); vertical-align: text-bottom; animation: blink 1s steps(1) infinite; }
+  @keyframes blink { 50% { opacity: 0; } }
+  h1 { font-size: clamp(2.2rem, 7vw, 3.4rem); line-height: 1.1; letter-spacing: -.03em; }
+  .role { font-size: 1.15rem; color: var(--muted); margin-top: 12px; }
+  .hero p.lead { margin-top: 24px; max-width: 580px; }
+  .cta { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 32px; }
+  .btn {
+    font-family: var(--mono); font-size: .88rem; text-decoration: none;
+    padding: 10px 18px; border-radius: 8px; border: 1px solid var(--border);
+    transition: transform .2s, border-color .2s, background .2s;
+  }
+  .btn:hover { transform: translateY(-2px); border-color: var(--accent); }
+  .btn.primary { background: var(--accent); color: var(--bg); border-color: var(--accent); }
+
+  /* Sections */
+  section { padding: 56px 0; border-top: 1px solid var(--border); }
+  h2 { font-family: var(--mono); font-size: 1rem; font-weight: 500; color: var(--accent); margin-bottom: 28px; }
+  h2::before { content: "// "; color: var(--muted); }
+  h3 { font-size: 1.05rem; font-weight: 600; }
+  .muted { color: var(--muted); }
+  .meta { font-family: var(--mono); font-size: .8rem; color: var(--muted); }
+
+  .card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+    padding: 24px; transition: border-color .25s, transform .25s;
+  }
+  .card:hover { border-color: var(--accent); }
+  .tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+  .tag {
+    font-family: var(--mono); font-size: .75rem; padding: 3px 10px; border-radius: 999px;
+    background: var(--accent-soft); color: var(--text);
+  }
+  .status { font-family: var(--mono); font-size: .75rem; color: var(--accent); display: inline-flex; align-items: center; gap: 6px; margin-bottom: 10px; }
+  .status::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .3; } }
+
+  .timeline { display: grid; gap: 28px; }
+  .item { display: grid; grid-template-columns: 150px 1fr; gap: 16px; }
+  .item p { margin-top: 6px; }
+  @media (max-width: 640px) { .item { grid-template-columns: 1fr; gap: 4px; } }
+
+  .skills { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
+  .skills .card { padding: 20px; }
+  .skills h3 { font-family: var(--mono); font-size: .85rem; font-weight: 500; color: var(--muted); }
+
+  .contact p { max-width: 520px; }
+  .email {
+    display: inline-block; margin-top: 20px; font-family: var(--mono);
+    font-size: clamp(1rem, 4vw, 1.3rem); color: var(--accent); text-decoration: none;
+    border-bottom: 1px dashed var(--accent); word-break: break-all;
+  }
+  footer { padding: 32px 0 48px; border-top: 1px solid var(--border); font-family: var(--mono); font-size: .8rem; color: var(--muted); }
+
+  .reveal { opacity: 0; transform: translateY(16px); transition: opacity .6s ease, transform .6s ease; }
+  .reveal.visible { opacity: 1; transform: none; }
+  @media (prefers-reduced-motion: reduce) {
+    .reveal { opacity: 1; transform: none; transition: none; }
+    .cursor, .status::before { animation: none; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="wrap">
+    <a href="#" class="logo">yusuf<span>.</span>karatas</a>
+    <div class="links">
+      <a href="#about" data-i18n="nav.about"></a>
+      <a href="#project" data-i18n="nav.project"></a>
+      <a href="#experience" data-i18n="nav.experience"></a>
+      <a href="#contact" data-i18n="nav.contact"></a>
+    </div>
+    <div class="controls">
+      <button id="langBtn" aria-label="Dil / Language">EN</button>
+      <button id="themeBtn" aria-label="Tema / Theme">◐</button>
+    </div>
+  </div>
+</nav>
+
+<main class="wrap">
+  <header class="hero">
+    <div class="prompt">&gt; <span id="typed"></span><span class="cursor"></span></div>
+    <h1>Yusuf Karataş</h1>
+    <div class="role" data-i18n="hero.role"></div>
+    <p class="lead" data-i18n="hero.lead"></p>
+    <div class="cta">
+      <a class="btn primary" href="mailto:ysfkaratas53@gmail.com" data-i18n="hero.cta"></a>
+      <a class="btn" href="https://www.linkedin.com/in/ysfkaratas/" target="_blank" rel="noopener">LinkedIn ↗</a>
+      <a class="btn" href="https://github.com/Yusuf-Karatas" target="_blank" rel="noopener">GitHub ↗</a>
+    </div>
+  </header>
+
+  <section id="about" class="reveal">
+    <h2 data-i18n="nav.about"></h2>
+    <p data-i18n="about.p1"></p>
+    <p style="margin-top:14px" data-i18n="about.p2"></p>
+  </section>
+
+  <section id="project" class="reveal">
+    <h2 data-i18n="nav.project"></h2>
+    <div class="card">
+      <div class="status" data-i18n="project.status"></div>
+      <h3 data-i18n="project.title"></h3>
+      <p class="muted" style="margin-top:8px" data-i18n="project.desc"></p>
+      <div class="tags">
+        <span class="tag">ESP32</span><span class="tag">C/C++</span><span class="tag">SHT31 · I2C</span><span class="tag">DS18B20 · 1-Wire</span>
+      </div>
+    </div>
+  </section>
+
+  <section id="experience" class="reveal">
+    <h2 data-i18n="nav.experience"></h2>
+    <div class="timeline">
+      <div class="item">
+        <div class="meta" data-i18n="exp1.date"></div>
+        <div>
+          <h3 data-i18n="exp1.title"></h3>
+          <div class="muted">Trabzon Büyükşehir Belediyesi</div>
+          <p data-i18n="exp1.desc"></p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="skills" class="reveal">
+    <h2 data-i18n="nav.skills"></h2>
+    <div class="skills">
+      <div class="card"><h3 data-i18n="skills.lang"></h3><div class="tags"><span class="tag">C</span><span class="tag">C++</span><span class="tag">C#</span><span class="tag">Python</span><span class="tag">Java</span><span class="tag">SQL</span></div></div>
+      <div class="card"><h3 data-i18n="skills.embedded"></h3><div class="tags"><span class="tag">ESP32</span><span class="tag">I2C</span><span class="tag">1-Wire</span></div></div>
+      <div class="card"><h3 data-i18n="skills.other"></h3><div class="tags"><span class="tag">ASP.NET</span><span class="tag">OOP</span><span class="tag">Unity</span><span class="tag">Unreal Engine</span></div></div>
+    </div>
+  </section>
+
+  <section id="education" class="reveal">
+    <h2 data-i18n="nav.education"></h2>
+    <div class="timeline">
+      <div class="item">
+        <div class="meta">2023 — 2027</div>
+        <div><h3 data-i18n="edu1.title"></h3><div class="muted" data-i18n="edu1.school"></div></div>
+      </div>
+      <div class="item">
+        <div class="meta">2018 — 2022</div>
+        <div><h3>TOBB Rize Fen Lisesi</h3><div class="muted" data-i18n="edu2.desc"></div></div>
+      </div>
+      <div class="item">
+        <div class="meta">2014 — 2022</div>
+        <div><h3>Fatma-Nuri Erkan Bilim ve Sanat Merkezi</h3><div class="muted" data-i18n="edu3.desc"></div></div>
+      </div>
+    </div>
+    <p class="meta" style="margin-top:28px" data-i18n="edu.certs"></p>
+  </section>
+
+  <section id="contact" class="contact reveal">
+    <h2 data-i18n="nav.contact"></h2>
+    <p data-i18n="contact.p"></p>
+    <a class="email" href="mailto:ysfkaratas53@gmail.com">ysfkaratas53@gmail.com</a>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">© <span id="year"></span> Yusuf Karataş</div>
+</footer>
+
+<script>
+const i18n = {
+  tr: {
+    "nav.about": "Hakkımda", "nav.project": "Güncel Proje", "nav.experience": "Deneyim",
+    "nav.skills": "Teknolojiler", "nav.education": "Eğitim", "nav.contact": "İletişim",
+    "hero.role": "Bilgisayar Mühendisliği Öğrencisi · Gömülü Sistemler",
+    "hero.lead": "Donanıma yakın, verimli ve sürdürülebilir yazılımlar geliştirmeyi hedefliyorum. ESP32 ile C/C++ mikrodenetleyici programlama ve nesneye dayalı tasarım üzerine çalışıyorum.",
+    "hero.cta": "İletişime geç",
+    "about.p1": "Düzce Üniversitesi'nde Bilgisayar Mühendisliği son sınıf öğrencisiyim. Odak alanlarım ESP32 ile mikrodenetleyici programlama ve sensör entegrasyonu, temiz ve modüler kod mimarisi, kaynak kısıtlı sistemlerde bellek yönetimi ve performans optimizasyonu.",
+    "about.p2": "Unity (C#) ve Unreal Engine (C++) ile oyun geliştirirken nesne yönelimli programlama ve optimizasyon konularında pratik tecrübe kazandım. Bugün bu birikimi donanım tarafına taşıyorum. Şu anda gömülü sistemler veya yazılım geliştirme alanında staj fırsatı arıyorum.",
+    "project.status": "geliştiriliyor",
+    "project.title": "Küf Erken Uyarı Sistemi",
+    "project.desc": "Bir ekip arkadaşımla birlikte, nemden kaynaklanan küf oluşumunu önceden tespit edip önlemeyi amaçlayan ESP32 tabanlı bir sistem geliştiriyoruz. Ortam sıcaklığı, nem ve duvar yüzey sıcaklığı saatlik periyotlarla ölçülüyor ve veriler cihaz üzerinde yerel olarak saklanıyor.",
+    "exp1.date": "Haz 2026 — Ağu 2026", "exp1.title": "Bilgisayar Mühendisi",
+    "exp1.desc": "Gerçek hayatta kullanılacak kurumsal bir ASP.NET web uygulamasının geliştirilmesinde görev aldım.",
+    "skills.lang": "diller", "skills.embedded": "gömülü", "skills.other": "diğer",
+    "edu1.title": "Bilgisayar Mühendisliği, Lisans", "edu1.school": "Düzce Üniversitesi",
+    "edu2.desc": "Sayısal",
+    "edu3.desc": "Mantık · BİLSEM",
+    "edu.certs": "Sertifikalar: Python Programlama · C++ Uygulamalı · Nesneye Yönelik Programlama",
+    "contact.p": "Staj fırsatları, projeler ya da sadece merhaba demek için bana e-posta ile ulaşabilirsin.",
+    "typed": ["gömülü sistemler", "esp32 + c/c++", "nesneye dayalı programlama"]
+  },
+  en: {
+    "nav.about": "About", "nav.project": "Current Project", "nav.experience": "Experience",
+    "nav.skills": "Tech Stack", "nav.education": "Education", "nav.contact": "Contact",
+    "hero.role": "Computer Engineering Student · Embedded Systems",
+    "hero.lead": "I aim to build efficient, maintainable software that runs close to the hardware. I work on C/C++ microcontroller programming with ESP32 and object-oriented design.",
+    "hero.cta": "Get in touch",
+    "about.p1": "I'm a senior Computer Engineering student at Düzce University. My focus areas are microcontroller programming and sensor integration with ESP32, clean and modular code architecture, and memory management and performance optimization on resource-constrained systems.",
+    "about.p2": "Building games with Unity (C#) and Unreal Engine (C++) gave me hands-on experience in object-oriented programming and optimization. Today I'm bringing that foundation to the hardware side. I'm currently looking for an internship in embedded systems or software development.",
+    "project.status": "in progress",
+    "project.title": "Mold Early Warning System",
+    "project.desc": "Together with a teammate, I'm building an ESP32-based system that detects conditions leading to humidity-driven mold before it forms. It measures ambient temperature, humidity and wall surface temperature every hour and stores the data locally on the device.",
+    "exp1.date": "Jun 2026 — Aug 2026", "exp1.title": "Computer Engineer",
+    "exp1.desc": "Worked on the development of an enterprise ASP.NET web application used in production.",
+    "skills.lang": "languages", "skills.embedded": "embedded", "skills.other": "other",
+    "edu1.title": "B.Sc. Computer Engineering", "edu1.school": "Düzce University",
+    "edu2.desc": "Science track",
+    "edu3.desc": "Logic · Science and Art Center for gifted students (BİLSEM)",
+    "edu.certs": "Certificates: Python Programming · Hands-on C++ · Object-Oriented Programming",
+    "contact.p": "Reach out by email for internship opportunities, projects, or just to say hi.",
+    "typed": ["embedded systems", "esp32 + c/c++", "object-oriented programming"]
+  }
+};
+
+const store = {
+  get(k) { try { return localStorage.getItem(k); } catch { return null; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch {} }
+};
+
+let lang = store.get("lang") || (navigator.language.startsWith("tr") ? "tr" : "en");
+const langBtn = document.getElementById("langBtn");
+
+function applyLang() {
+  document.documentElement.lang = lang;
+  document.querySelectorAll("[data-i18n]").forEach(el => {
+    el.textContent = i18n[lang][el.dataset.i18n];
+  });
+  langBtn.textContent = lang === "tr" ? "EN" : "TR";
+  restartTyping();
+}
+langBtn.addEventListener("click", () => {
+  lang = lang === "tr" ? "en" : "tr";
+  store.set("lang", lang);
+  applyLang();
+});
+
+// Theme: follows the system until the visitor picks one
+const savedTheme = store.get("theme");
+if (savedTheme) document.documentElement.dataset.theme = savedTheme;
+document.getElementById("themeBtn").addEventListener("click", () => {
+  const isDark = document.documentElement.dataset.theme
+    ? document.documentElement.dataset.theme === "dark"
+    : matchMedia("(prefers-color-scheme: dark)").matches;
+  const next = isDark ? "light" : "dark";
+  document.documentElement.dataset.theme = next;
+  store.set("theme", next);
+});
+
+// Terminal typing effect
+const typedEl = document.getElementById("typed");
+let typingTimer;
+function restartTyping() {
+  clearTimeout(typingTimer);
+  const words = i18n[lang].typed;
+  let w = 0, c = 0, deleting = false;
+  (function tick() {
+    const word = words[w];
+    c += deleting ? -1 : 1;
+    typedEl.textContent = word.slice(0, c);
+    let delay = deleting ? 40 : 85;
+    if (!deleting && c === word.length) { deleting = true; delay = 1800; }
+    else if (deleting && c === 0) { deleting = false; w = (w + 1) % words.length; delay = 400; }
+    typingTimer = setTimeout(tick, delay);
+  })();
+}
+
+// Fade sections in on scroll
+const io = new IntersectionObserver(entries => {
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add("visible"); io.unobserve(e.target); } });
+}, { threshold: 0.12 });
+document.querySelectorAll(".reveal").forEach(el => io.observe(el));
+
+document.getElementById("year").textContent = new Date().getFullYear();
+applyLang();
+</script>
+</body>
+</html>
