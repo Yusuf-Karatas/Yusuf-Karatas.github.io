@@ -39,6 +39,15 @@
     transition: background .25s, color .25s;
   }
   a { color: inherit; }
+
+  /* Matrix code rain, kept faint so content stays readable */
+  #rain {
+    position: fixed; inset: 0; width: 100%; height: 100%;
+    z-index: 0; pointer-events: none; opacity: .1;
+  }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) #rain { opacity: .28; } }
+  :root[data-theme="dark"] #rain { opacity: .28; }
+  main, footer { position: relative; z-index: 1; }
   .wrap { max-width: 760px; margin: 0 auto; padding: 0 16px; }
 
   /* Nav */
@@ -128,6 +137,7 @@
 </style>
 </head>
 <body>
+<canvas id="rain" aria-hidden="true"></canvas>
 
 <nav>
   <div class="wrap">
@@ -297,9 +307,57 @@ langBtn.addEventListener("click", () => {
   applyLang();
 });
 
+// Matrix-style code rain: slow, sparse columns drawn at ~20fps
+const rain = (() => {
+  const canvas = document.getElementById("rain");
+  const ctx = canvas.getContext("2d");
+  const chars = "01{}[]()<>;=+-*/&|!#$%_ifelsevoidintcharwhilereturn".split("");
+  const size = 16;
+  let drops = [], bg = "#000", isDark = true, last = 0;
+
+  function refreshColors() {
+    bg = getComputedStyle(document.body).backgroundColor;
+    const [r, g, b] = bg.match(/\d+/g).map(Number);
+    isDark = r + g + b < 384;
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  }
+  function resize() {
+    canvas.width = innerWidth;
+    canvas.height = innerHeight;
+    const cols = Math.ceil(canvas.width / size);
+    // Only about half the columns are active, so the effect stays sparse
+    drops = Array.from({ length: cols }, () => Math.random() < 0.5 ? Math.random() * -50 : null);
+    refreshColors();
+  }
+  function frame(t) {
+    requestAnimationFrame(frame);
+    if (t - last < 50) return;
+    last = t;
+    ctx.globalAlpha = 0.12;
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.globalAlpha = 1;
+    ctx.font = `${size}px "JetBrains Mono", monospace`;
+    ctx.fillStyle = isDark ? "#22c55e" : "#15803d";
+    drops.forEach((y, i) => {
+      if (y === null) return;
+      ctx.fillText(chars[Math.random() * chars.length | 0], i * size, y * size);
+      drops[i] = y * size > canvas.height && Math.random() > 0.975 ? 0 : y + 1;
+    });
+  }
+
+  resize();
+  addEventListener("resize", resize);
+  matchMedia("(prefers-color-scheme: dark)").addEventListener("change", refreshColors);
+  if (!matchMedia("(prefers-reduced-motion: reduce)").matches) requestAnimationFrame(frame);
+  return { refreshColors };
+})();
+
 // Theme: follows the system until the visitor picks one
 const savedTheme = store.get("theme");
 if (savedTheme) document.documentElement.dataset.theme = savedTheme;
+rain.refreshColors();
 document.getElementById("themeBtn").addEventListener("click", () => {
   const isDark = document.documentElement.dataset.theme
     ? document.documentElement.dataset.theme === "dark"
@@ -307,6 +365,7 @@ document.getElementById("themeBtn").addEventListener("click", () => {
   const next = isDark ? "light" : "dark";
   document.documentElement.dataset.theme = next;
   store.set("theme", next);
+  rain.refreshColors();
 });
 
 // Terminal typing effect
